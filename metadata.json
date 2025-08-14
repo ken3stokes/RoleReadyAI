@@ -1,0 +1,6 @@
+{
+  "name": "RoleReady AI",
+  "description": "An intelligent assistant that evaluates resumes against job descriptions to identify alignment, gaps, and improvement opportunities. It provides scores, keyword analysis, and rewrite suggestions to help users secure interviews.",
+  "requestFramePermissions": [],
+  "prompt": ""
+}
