@@ -233,6 +233,126 @@ const App: React.FC = () => {
     }
   }, [resume, jobDescription]);
 
+  const handleDownloadReport = useCallback(() => {
+    if (!analysisResult) return;
+
+    const {
+      score,
+      scoreMeaning,
+      quickSummary,
+      successLikelihood,
+      alignmentTable,
+      opportunitiesForImprovement,
+      rewriteSuggestions,
+      modernizationSuggestions,
+      keywordGaps,
+      sectionAnalysis,
+      jdInsights,
+      formattingIssues,
+      inDemandSkills,
+    } = analysisResult;
+
+    const reportParts: string[] = [];
+
+    reportParts.push(`# RoleReady AI Analysis Report`);
+    reportParts.push(`---`);
+    reportParts.push(`## Overall Score: ${score.toFixed(1)}/10 - ${scoreMeaning}`);
+    reportParts.push(`\n### Quick Summary`);
+    reportParts.push(`- **Your Biggest Strength:** ${quickSummary.topStrength}`);
+    reportParts.push(`- **Top Priority for Improvement:** ${quickSummary.topImprovement}`);
+    reportParts.push(`- **Final Verdict:** ${quickSummary.finalVerdict}`);
+
+    if (successLikelihood) {
+        reportParts.push(`\n## Success Likelihood`);
+        reportParts.push(`**Overall Score:** ${successLikelihood.overallScore}%`);
+        reportParts.push(`**Summary:** ${successLikelihood.summary}`);
+        successLikelihood.factors.forEach(factor => {
+            reportParts.push(`- **${factor.name}:** ${factor.score}/100 - ${factor.justification}`);
+        });
+    }
+    
+    if (inDemandSkills && inDemandSkills.length > 0) {
+        reportParts.push(`\n## Your Marketable Skills`);
+        inDemandSkills.forEach(item => {
+            reportParts.push(`### ${item.skill}`);
+            reportParts.push(`- **Why it's valuable:** ${item.reason}`);
+            reportParts.push(`- **Evidence from your resume:** *"${item.evidence}"*`);
+        });
+    }
+
+    if (keywordGaps && keywordGaps.length > 0) {
+        reportParts.push(`\n## Prioritized Keyword Gaps`);
+        keywordGaps.forEach(gap => {
+            reportParts.push(`- **${gap.keyword} (${gap.priority}):** ${gap.suggestion}`);
+        });
+    }
+
+    if (rewriteSuggestions && rewriteSuggestions.length > 0) {
+        reportParts.push(`\n## Bullet Rewrite Suggestions`);
+        rewriteSuggestions.forEach(s => {
+            reportParts.push(`- **Original:** *"${s.originalBullet}"*`);
+            reportParts.push(`- **Suggested:** *"${s.suggestedBullet}"*`);
+        });
+    }
+
+    if (alignmentTable && alignmentTable.length > 0) {
+        reportParts.push(`\n## Detailed Keyword Alignment`);
+        reportParts.push(`| Theme | JD Keyword | Resume Evidence | Match |`);
+        reportParts.push(`|---|---|---|:---:|`);
+        alignmentTable.forEach(item => {
+            reportParts.push(`| ${item.theme} | ${item.jdKeyword} | ${item.resumeEvidence.replace(/\n/g, ' ')} | ${item.match} |`);
+        });
+    }
+
+    if (sectionAnalysis && sectionAnalysis.length > 0) {
+        reportParts.push(`\n## Resume Section Heatmap`);
+        sectionAnalysis.forEach(section => {
+            reportParts.push(`- **${section.sectionName} (Score: ${section.score}/10):** ${section.feedback}`);
+        });
+    }
+
+    if (jdInsights) {
+        reportParts.push(`\n## Job Description Intelligence`);
+        const { hardSkills, softSkills, complianceRequirements, hiddenRequirements } = jdInsights;
+        if (hardSkills.length > 0) reportParts.push(`### Hard Skills\n${hardSkills.map(s => `- **${s.item}:** ${s.explanation}`).join('\n')}`);
+        if (softSkills.length > 0) reportParts.push(`### Soft Skills\n${softSkills.map(s => `- **${s.item}:** ${s.explanation}`).join('\n')}`);
+        if (complianceRequirements.length > 0) reportParts.push(`### Compliance Requirements\n${complianceRequirements.map(s => `- **${s.item}:** ${s.explanation}`).join('\n')}`);
+        if (hiddenRequirements.length > 0) reportParts.push(`### Hidden Requirements\n${hiddenRequirements.map(s => `- **${s.item}:** ${s.explanation}`).join('\n')}`);
+    }
+
+    if (modernizationSuggestions && modernizationSuggestions.length > 0) {
+        reportParts.push(`\n## Resume Modernization`);
+        modernizationSuggestions.forEach(item => {
+            reportParts.push(`- **${item.item} (${item.category}):** ${item.reason} Suggestion: ${item.suggestion || 'Remove'}`);
+        });
+    }
+
+    if (formattingIssues && formattingIssues.length > 0) {
+        reportParts.push(`\n## ATS Friendliness & Formatting`);
+        formattingIssues.forEach(item => {
+            reportParts.push(`- **${item.issue} (${item.severity}):** ${item.suggestion}`);
+        });
+    }
+    
+    if (opportunitiesForImprovement && opportunitiesForImprovement.length > 0) {
+        reportParts.push(`\n## Opportunities for Improvement`);
+        opportunitiesForImprovement.forEach(opp => {
+            reportParts.push(`- ${opp}`);
+        });
+    }
+
+    const reportContent = reportParts.join('\n\n');
+    const blob = new Blob([reportContent], { type: 'text/markdown;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', 'RoleReady_AI_Report.md');
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  }, [analysisResult]);
+
 
   const handleShowPremiumFeature = (featureName: string, featureDescription: string) => {
     setPremiumModalFeatureName(featureName);
@@ -270,6 +390,7 @@ const App: React.FC = () => {
                       onGenerateLinkedIn={handleGenerateLinkedInRequest}
                       isGeneratingLinkedIn={isGeneratingLinkedIn}
                       onShowPremiumFeature={handleShowPremiumFeature}
+                      onDownloadReport={handleDownloadReport}
                   />
               ) : (
                   <InputSection 

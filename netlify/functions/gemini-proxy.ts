@@ -1,5 +1,5 @@
 import { GoogleGenAI, Type } from "@google/genai";
-import type { AnalysisResult, ModernizationSuggestion, JobSuggestion, LinkedInGeneratorResult } from '../../types';
+import type { AnalysisResult, ModernizationSuggestion, JobSuggestion, LinkedInGeneratorResult, InDemandSkill } from '../../types';
 
 // Schemas are defined here, on the backend, where they are used.
 const analysisSchema = {
@@ -45,7 +45,7 @@ const analysisSchema = {
             properties: {
                 hardSkills: {
                     type: Type.ARRAY,
-                    description: "List of specific, teachable technical abilities (e.g., 'Python', 'AWS', 'SQL'). For the \`explanation\`, provide its context in the role.",
+                    description: "List of specific, teachable technical abilities (e.g., 'Python', 'AWS', 'SQL'). For the `explanation`, provide its context in the role.",
                     items: {
                         type: Type.OBJECT,
                         properties: {
@@ -177,9 +177,22 @@ const analysisSchema = {
                 },
                 required: ["issue", "suggestion", "severity"]
             }
+        },
+        inDemandSkills: {
+            type: Type.ARRAY,
+            description: "A list of the candidate's most valuable, in-demand skills found in the resume, with justification for why they are relevant in the current job market.",
+            items: {
+                type: Type.OBJECT,
+                properties: {
+                    skill: { type: Type.STRING, description: "The in-demand skill identified from the resume." },
+                    reason: { type: Type.STRING, description: "A detailed explanation of why this skill is currently valuable in the job market, referencing industry trends." },
+                    evidence: { type: Type.STRING, description: "The specific quote or bullet point from the resume that demonstrates this skill." }
+                },
+                required: ["skill", "reason", "evidence"]
+            }
         }
     },
-    required: ["score", "scoreMeaning", "quickSummary", "successLikelihood", "jdInsights", "alignmentTable", "opportunitiesForImprovement", "rewriteSuggestions", "modernizationSuggestions", "keywordGaps", "sectionAnalysis", "formattingIssues"]
+    required: ["score", "scoreMeaning", "quickSummary", "successLikelihood", "jdInsights", "alignmentTable", "opportunitiesForImprovement", "rewriteSuggestions", "modernizationSuggestions", "keywordGaps", "sectionAnalysis", "formattingIssues", "inDemandSkills"]
 };
 const jobSuggestionsSchema = {
     type: Type.ARRAY,
@@ -288,7 +301,7 @@ ${resume}
 4.  **Score the Resume:** Calculate a total score out of 10.0, weighted precisely as follows:
     *   **Keyword & Theme Match (35%):** How well do resume keywords align with JD themes?
     *   **Domain & Role Relevance (35%):** Does the resume's experience genuinely fit the industry and seniority of the role?
-    *   **Language & Impact (20%):** Strength of action verbs and use of quantifiable metrics.
+    *   **Language & Impact (20%):** Strength of action verbs and use of impactful metrics (both quantitative and qualitative).
     *   **Gaps & Omissions (10%):** Penalty for missing critical requirements.
     *   Based on the final score, determine the \`scoreMeaning\`.
 
@@ -334,8 +347,10 @@ ${resume}
 
 13. **Create Quick Summary:** Populate the \`quickSummary\` object. This should distill the entire analysis into the most critical, actionable advice.
     *   **\`topStrength\`**: A single sentence highlighting the candidate's biggest strength for this specific role (e.g., "Your extensive experience with React and TypeScript is a perfect match for the core responsibilities.").
-    *   **\`topImprovement\`**: The single most impactful improvement the candidate can make (e.g., "Quantifying the achievements in your bullet points with specific metrics would significantly strengthen your resume.").
+    *   **\`topImprovement\`**: The single most impactful improvement the candidate can make (e.g., "Strengthening your bullet points by quantifying results or describing the scope of your impact would significantly improve your resume.").
     *   **\`finalVerdict\`**: A final, encouraging summary sentence about the overall match (e.g., "Overall, you are a strong candidate for this role with a few key areas for improvement.").
+
+14. **Identify In-Demand Skills**: Populate the \`inDemandSkills\` array. Scan the resume for 3-5 skills that are highly valuable in the current job market, even if they aren't explicitly in the job description. For each skill, provide the skill name, a detailed reason for its market value, and the direct evidence from the resume that demonstrates this skill.
 
 Produce only the JSON object based on your analysis.
 `;
@@ -378,10 +393,13 @@ ${originalResume}
 
 **Rewrite Instructions:**
 
-1.  **Integrate Keywords:** Seamlessly weave in critical keywords, technologies, and skills mentioned in the job description (e.g., "PKI," "cryptographic protocols," "audit readiness").
+1.  **Integrate Keywords:** Seamlessly weave in critical keywords, technologies, and skills mentioned in the job description.
 2.  **Use Strong Verbs:** Replace passive or weak verbs ("assisted with," "responsible for") with strong, action-oriented verbs ("architected," "spearheaded," "quantified," "streamlined").
 3.  **Emphasize Impact:** Reframe bullet points to focus on achievements and measurable outcomes, not just duties.
-4.  **Add Quantifiable Placeholders:** This is critical. Where a bullet point describes an achievement, insert a placeholder to prompt the user to add a specific metric. Use placeholders like \`[Quantify impact, e.g., reduced latency by X%]\`, \`[Specify metric, e.g., managed a budget of $Y]\`, or \`[Add number, e.g., led a team of Z engineers]\`. Add these to several key bullet points.
+4.  **Add Impact Placeholders (Quantifiable & Qualitative):** This is critical. Where a bullet point describes an achievement, insert a placeholder to prompt the user to add specific impact.
+    *   For **quantifiable** impact, use placeholders like \`[Quantify impact, e.g., reduced latency by X%]\`, \`[Specify metric, e.g., managed a budget of $Y]\`, or \`[Add number, e.g., led a team of Z engineers]\`.
+    *   For **qualitative** impact where numbers don't fit, use placeholders that prompt for scope or influence, like \`[Describe scope, e.g., for a 50-person division]\`, \`[Explain influence, e.g., adopted as the new company standard]\`, or \`[Detail complexity, e.g., navigating complex regulations]\`.
+    *   Add these placeholders to several key bullet points.
 5.  **Maintain Format:** Preserve the overall structure (e.g., contact info, summary, experience, education sections) of the original resume.
 6.  **Tone:** The tone should be professional, confident, and highly competent.
 

@@ -58,7 +58,7 @@ const RewriteModal: React.FC<RewriteModalProps> = ({ isOpen, onClose, content })
 
         <div className="p-6 overflow-y-auto flex-1 bg-slate-50 dark:bg-dark-background">
             <p className="text-light-text dark:text-dark-text mb-4">
-                Your resume has been rewritten to better match the job description. Review the text below, fill in the placeholders (e.g., <code className="bg-yellow-100 text-yellow-800 dark:bg-yellow-900/50 dark:text-yellow-300 rounded px-1 text-sm font-medium">[Quantify impact...]</code>) with your specific achievements, and then copy it.
+                Your resume has been rewritten to better match the job description. Review the text below and fill in the placeholders with your specific achievements. Look for both quantitative prompts (e.g., <code className="bg-yellow-100 text-yellow-800 dark:bg-yellow-900/50 dark:text-yellow-300 rounded px-1 text-sm font-medium">[Quantify impact...]</code>) and qualitative ones (e.g., <code className="bg-yellow-100 text-yellow-800 dark:bg-yellow-900/50 dark:text-yellow-300 rounded px-1 text-sm font-medium">[Describe scope...]</code>), then copy your final text.
             </p>
           <textarea
             className="w-full h-[50vh] p-4 bg-white dark:bg-slate-900 border border-light-border dark:border-dark-border rounded-md text-light-text dark:text-dark-text font-mono text-sm whitespace-pre-wrap focus:ring-primary focus:border-primary"
